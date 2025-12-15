@@ -3,197 +3,210 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Transfer-to-Grad Planner</title>
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <title>Transfer Planner</title>
   <link rel="stylesheet" href="./styles.css"/>
 </head>
 <body>
-  <header class="top">
+  <header class="topbar">
     <div class="brand">
-      <div class="logo" aria-hidden="true">TP</div>
-      <div>
-        <div class="title">Transfer-to-Grad Planner</div>
-        <div class="subtitle">Upload a transcript/degree-audit PDF, identify completed courses, and build a term-by-term plan.</div>
+      <span class="mark" aria-hidden="true"></span>
+      <div class="brand-text">
+        <div class="brand-title">Transfer Planner</div>
+        <div class="brand-sub">Build a graduation-ready schedule from your transcript PDF — locally, offline.</div>
       </div>
     </div>
-    <div class="top-actions">
-      <button class="btn ghost" id="btnLoadSample">Load sample</button>
-      <button class="btn" id="btnExportPlan">Export plan (.json)</button>
+    <div class="actions">
+      <button class="btn subtle" id="btnLoadSample" title="Populate a demo dataset">Sample</button>
+      <button class="btn" id="btnExportPlan" title="Download your plan as JSON">Export</button>
     </div>
   </header>
 
-  <main class="grid">
-    <section class="card">
-      <h2>1) Upload PDFs</h2>
-      <p class="muted">Everything runs in your browser. PDFs are not uploaded to a server.</p>
+  <main class="shell">
+    <section class="panel">
+      <div class="panel-head">
+        <h1>Plan your remaining semesters</h1>
+        <p class="muted">No accounts, no uploads. Everything stays on this device.</p>
+      </div>
 
-      <div class="uploader">
+      <div class="stepper" aria-label="Planner steps">
+        <div class="step">
+          <div class="dot">1</div>
+          <div class="step-body">
+            <div class="step-title">Upload</div>
+            <div class="step-sub">Transcript / degree audit PDF</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="dot">2</div>
+          <div class="step-body">
+            <div class="step-title">Confirm</div>
+            <div class="step-sub">Completed + equivalencies</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="dot">3</div>
+          <div class="step-body">
+            <div class="step-title">Requirements</div>
+            <div class="step-sub">Required courses + prereqs</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="dot">4</div>
+          <div class="step-body">
+            <div class="step-title">Generate</div>
+            <div class="step-sub">Term-by-term schedule</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <!-- Step 1 -->
+      <section class="card">
+        <div class="card-head">
+          <h2>1 — Upload</h2>
+          <span class="pill" id="parseStatus">Idle</span>
+        </div>
+
         <label class="file">
           <input type="file" id="transcriptPdf" accept="application/pdf"/>
-          <span class="file-label">
-            <span class="file-title">Transcript / Degree Audit PDF</span>
+          <span class="file-ui">
+            <span class="file-title">Transcript / Degree Audit (PDF)</span>
             <span class="file-meta" id="transcriptMeta">Choose a PDF…</span>
-          </span>
-        </label>
-
-        <label class="file">
-          <input type="file" id="requirementsPdf" accept="application/pdf"/>
-          <span class="file-label">
-            <span class="file-title">Requirements PDF (optional)</span>
-            <span class="file-meta" id="requirementsMeta">Choose a PDF…</span>
           </span>
         </label>
 
         <div class="row">
           <button class="btn" id="btnParse">Extract courses</button>
-          <div class="pill" id="parseStatus">Waiting…</div>
+          <button class="btn subtle" id="btnShowHelp">PDF parsing help</button>
         </div>
-      </div>
 
-      <details class="details">
-        <summary>What does “Extract courses” look for?</summary>
-        <div class="details-body">
-          <p>
-            It scans text for patterns like <code>ENGR 201</code>, <code>CS-111</code>, or <code>MATH 151</code>.
-            You can adjust the regex in <code>app.js</code> if your school formats codes differently.
+        <div class="notice" id="pdfHelp" hidden>
+          <b>Offline PDF parsing requires pdf.js</b>
+          <p class="muted">
+            This build is set up for offline parsing, but your environment may not include the full pdf.js files yet.
+            If extraction fails, follow <code>vendor/pdfjs/INSTALL_PDFJS.txt</code> (included in this ZIP) to drop in the official files.
           </p>
         </div>
-      </details>
-    </section>
+      </section>
 
-    <section class="card">
-      <h2>2) Confirm completed courses</h2>
-      <p class="muted">Edit anything that was missed or misread. Add transfer-equivalencies if needed.</p>
-
-      <div class="split">
-        <div>
-          <div class="label">Detected completed courses</div>
-          <div class="chipbox" id="completedChips"></div>
-
-          <div class="row">
-            <input class="input" id="addCompleted" placeholder="Add course code (e.g., MATH 151)"/>
-            <button class="btn" id="btnAddCompleted">Add</button>
-          </div>
-
-          <div class="label">Raw extracted text (for sanity-check)</div>
-          <textarea class="textarea" id="rawText" spellcheck="false" placeholder="PDF text will appear here…"></textarea>
+      <!-- Step 2 -->
+      <section class="card">
+        <div class="card-head">
+          <h2>2 — Completed</h2>
+          <span class="pill" id="completedCount">0 courses</span>
         </div>
 
-        <div>
-          <div class="label">Equivalency map (CC → University)</div>
-          <p class="muted small">Use this when your transcript uses CC codes but your target program uses university codes.</p>
-          <textarea class="textarea mono" id="equivalency" spellcheck="false"></textarea>
-          <div class="row">
-            <button class="btn ghost" id="btnApplyEquiv">Apply mapping</button>
-            <span class="muted small">Format: one per line, like <code>MAT 152 = MATH 152</code></span>
-          </div>
+        <div class="label">Completed courses</div>
+        <div class="chipbox" id="completedChips"></div>
+
+        <div class="row">
+          <input class="input" id="addCompleted" placeholder="Add course code (e.g., MATH 152)"/>
+          <button class="btn" id="btnAddCompleted">Add</button>
         </div>
-      </div>
-    </section>
 
-    <section class="card">
-      <h2>3) Define your target requirements</h2>
-      <p class="muted">
-        If you uploaded a Requirements PDF, we’ll try to detect course codes from it too.
-        Otherwise, paste your program’s required courses below (one per line).
-      </p>
+        <details class="details">
+          <summary>Equivalency mapping (CC → University)</summary>
+          <div class="details-body">
+            <textarea class="textarea mono" id="equivalency" spellcheck="false"></textarea>
+            <div class="row">
+              <button class="btn subtle" id="btnApplyEquiv">Apply mapping</button>
+              <span class="muted small">Example: <code>MAT 152 = MATH 152</code></span>
+            </div>
+          </div>
+        </details>
+      </section>
 
-      <div class="row">
-        <button class="btn" id="btnUseReqPdf">Use requirements PDF</button>
-        <button class="btn ghost" id="btnLoadTemplate">Load template</button>
-      </div>
+      <!-- Step 3 -->
+      <section class="card">
+        <div class="card-head">
+          <h2>3 — Requirements</h2>
+          <span class="pill" id="reqCount">0 required</span>
+        </div>
 
-      <div class="label">Required courses (one per line)</div>
-      <textarea class="textarea mono" id="requirementsList" spellcheck="false" placeholder="Example:
+        <div class="label">Required courses (one per line)</div>
+        <textarea class="textarea mono" id="requirementsList" spellcheck="false" placeholder="Example:
 MATH 151
 MATH 152
 PHYS 203
-PHYS 204
-CS 111
-CS 112
-ENGR 201"></textarea>
+CS 111"></textarea>
 
-      <details class="details">
-        <summary>Optional: add prerequisites (recommended)</summary>
-        <div class="details-body">
-          <p class="muted">Paste a JSON block with prerequisites. We ship a small editable sample below.</p>
-          <textarea class="textarea mono" id="prereqJson" spellcheck="false"></textarea>
-          <div class="row">
-            <button class="btn ghost" id="btnValidatePrereq">Validate prerequisites JSON</button>
-            <span class="pill" id="prereqStatus">Not validated</span>
+        <div class="row">
+          <button class="btn subtle" id="btnLoadTemplate">Load template</button>
+          <button class="btn subtle" id="btnUseReqPdf">Use requirements PDF (optional)</button>
+          <input class="input" id="requirementsPdf" type="file" accept="application/pdf" style="display:none"/>
+        </div>
+
+        <details class="details">
+          <summary>Prerequisites (optional, recommended)</summary>
+          <div class="details-body">
+            <textarea class="textarea mono" id="prereqJson" spellcheck="false"></textarea>
+            <div class="row">
+              <button class="btn subtle" id="btnValidatePrereq">Validate</button>
+              <span class="pill" id="prereqStatus">Not validated</span>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <!-- Step 4 -->
+      <section class="card span2">
+        <div class="card-head">
+          <h2>4 — Generate plan</h2>
+          <span class="pill" id="planStatus">Ready</span>
+        </div>
+
+        <div class="formgrid">
+          <label class="field">
+            <span>Start term</span>
+            <input class="input" id="startTerm" value="Spring 2026"/>
+          </label>
+          <label class="field">
+            <span>Terms to plan</span>
+            <input class="input" id="termCount" type="number" min="1" max="20" value="6"/>
+          </label>
+          <label class="field">
+            <span>Max courses / term</span>
+            <input class="input" id="maxPerTerm" type="number" min="1" max="8" value="5"/>
+          </label>
+          <label class="field">
+            <span>Fill empty slots</span>
+            <select class="input" id="includeElectives">
+              <option value="no" selected>No</option>
+              <option value="yes">Yes (elective placeholders)</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="row">
+          <button class="btn primary" id="btnPlan">Generate schedule</button>
+          <button class="btn subtle" id="btnToggleRaw">Toggle raw PDF text</button>
+        </div>
+
+        <div class="split">
+          <div>
+            <div class="label">Remaining courses</div>
+            <div class="chipbox" id="remainingChips"></div>
+          </div>
+          <div>
+            <div class="label">Raw extracted text</div>
+            <textarea class="textarea mono" id="rawText" spellcheck="false" hidden></textarea>
           </div>
         </div>
-      </details>
-    </section>
-
-    <section class="card">
-      <h2>4) Build a graduation plan</h2>
-      <div class="formgrid">
-        <label class="field">
-          <span>Start term label</span>
-          <input class="input" id="startTerm" value="Spring 2026"/>
-        </label>
-
-        <label class="field">
-          <span>Terms to plan</span>
-          <input class="input" id="termCount" type="number" min="1" max="20" value="6"/>
-        </label>
-
-        <label class="field">
-          <span>Max courses per term</span>
-          <input class="input" id="maxPerTerm" type="number" min="1" max="8" value="5"/>
-        </label>
-
-        <label class="field">
-          <span>Include electives placeholder</span>
-          <select class="input" id="includeElectives">
-            <option value="no" selected>No</option>
-            <option value="yes">Yes (fill remaining slots)</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="row">
-        <button class="btn primary" id="btnPlan">Generate plan</button>
-        <div class="pill" id="planStatus">Ready</div>
-      </div>
-
-      <div class="results">
-        <div class="label">Remaining courses</div>
-        <div class="chipbox" id="remainingChips"></div>
 
         <div class="label">Term-by-term schedule</div>
         <div id="planView" class="plan"></div>
-      </div>
+      </section>
     </section>
 
-    <section class="card">
-      <h2>How it works</h2>
-      <ol class="steps">
-        <li><b>Extract</b> course codes from your transcript PDF.</li>
-        <li><b>Map</b> CC codes to university equivalents if needed.</li>
-        <li><b>List</b> your major requirements (and prerequisites if you have them).</li>
-        <li><b>Schedule</b> remaining courses using a prerequisite-aware term filler.</li>
-      </ol>
-      <p class="muted">
-        This is a planning aid, not official advising. Always confirm prerequisites, offerings, and transfer equivalencies with your department/advisor.
-      </p>
-
-      <div class="callout">
-        <b>Tip:</b> If your PDF is scanned (image-only), PDF text extraction may return little or nothing.
-        In that case, copy/paste your course list manually into “Completed courses” and “Required courses”.
-      </div>
-    </section>
+    <footer class="footer">
+      <span>Local-only planning tool • Verify with your advisor</span>
+      <span class="muted">PDF parsing: pdf.js (offline bundle supported)</span>
+    </footer>
   </main>
 
-  <footer class="footer">
-    <span class="muted">Built for transfer students. Privacy-first: local-only processing.</span>
-    <span class="muted">PDF parsing via pdf.js (CDN).</span>
-  </footer>
-
-  <!-- pdf.js (CDN) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.js" integrity="sha512-d2f6FzD+WvQ0dJwqE6vbm5d4r3bK5zvO3hA+86tkhptpNP6Zf8cT5f8sD05nZc4pp+R4G8VQh3m9J7mJm2B8tQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-
+  <!-- pdf.js via CDN (GitHub Pages friendly). If you want fully offline, swap this to ./vendor/pdfjs/pdf.min.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="./app.js"></script>
 </body>
 </html>

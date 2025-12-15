@@ -18,8 +18,7 @@ const STATE = {
 // pdf.js worker
 if (window.pdfjsLib) {
   // Use a matching CDN worker version for pdf.js
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.js";
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.js";
 }
 
 function setPill(el, text, tone = "neutral") {
@@ -299,9 +298,13 @@ function renderPlan(planObj) {
 function renderAll() {
   $("rawText").value = STATE.transcriptText || "";
   renderChips($("completedChips"), STATE.completed);
+  const cc = document.getElementById("completedCount");
+  if (cc) cc.textContent = `${STATE.completed.size} course(s)`;
 
   // Requirements textarea
   $("requirementsList").value = Array.from(STATE.requirements).sort((a,b)=>a.localeCompare(b)).join("\n");
+  const rc = document.getElementById("reqCount");
+  if (rc) rc.textContent = `${STATE.requirements.size} required`;
 
   // Remaining
   const remaining = computeRemaining();
@@ -354,7 +357,9 @@ $("btnParse").addEventListener("click", async () => {
     return;
   }
   if (!window.pdfjsLib) {
-    setPill($("parseStatus"), "pdf.js failed to load (check internet)", "bad");
+    setPill($("parseStatus"), "PDF engine not available (CDN blocked). If you need offline, bundle pdf.js locally under vendor/pdfjs/", "bad");
+    const helpBox = document.getElementById("pdfHelp");
+    if (helpBox) helpBox.hidden = false;
     return;
   }
 
@@ -375,6 +380,12 @@ $("btnParse").addEventListener("click", async () => {
 });
 
 $("btnUseReqPdf").addEventListener("click", async () => {
+  // If used as a button, open file picker first
+  const reqInput = $("requirementsPdf");
+  if (reqInput && reqInput.type === "file" && (!reqInput.files || !reqInput.files[0])) {
+    reqInput.click();
+    return;
+  }
   const file = $("requirementsPdf").files?.[0];
   if (!file) {
     setPill($("planStatus"), "Upload a requirements PDF or paste requirements", "warn");
@@ -511,4 +522,30 @@ $("btnLoadSample").addEventListener("click", async () => {
   }
   $("equivalency").value = "MAT 152 = MATH 152\nCIS 112 = CS 112";
   renderAll();
+})();
+
+// --- Minimal UI extras (offline build) ---
+(function uiExtras(){
+  const helpBtn = document.getElementById("btnShowHelp");
+  const helpBox = document.getElementById("pdfHelp");
+  if (helpBtn && helpBox) {
+    helpBtn.addEventListener("click", () => {
+      helpBox.hidden = !helpBox.hidden;
+    });
+  }
+
+  const rawBtn = document.getElementById("btnToggleRaw");
+  const raw = document.getElementById("rawText");
+  if (rawBtn && raw) {
+    rawBtn.addEventListener("click", () => {
+      raw.hidden = !raw.hidden;
+    });
+  }
+
+  // Requirements PDF button now triggers hidden input
+  const btnUseReqPdf = document.getElementById("btnUseReqPdf");
+  const reqInput = document.getElementById("requirementsPdf");
+  if (btnUseReqPdf && reqInput) {
+    btnUseReqPdf.addEventListener("click", () => reqInput.click());
+  }
 })();
