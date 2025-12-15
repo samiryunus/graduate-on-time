@@ -18,7 +18,8 @@ const STATE = {
 // pdf.js worker
 if (window.pdfjsLib) {
   // Use a matching CDN worker version for pdf.js
-  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.js";
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "./vendor/pdfjs/pdf.worker.min.js";
 }
 
 function setPill(el, text, tone = "neutral") {
