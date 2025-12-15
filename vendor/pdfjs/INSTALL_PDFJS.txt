@@ -1,0 +1,25 @@
+OFFLINE PDF PARSING — INSTALL OFFICIAL PDF.JS FILES
+
+This site expects these files to exist:
+
+  vendor/pdfjs/pdf.min.js
+  vendor/pdfjs/pdf.worker.min.js
+
+How to get them (official build):
+1) On a machine with internet, download the PDF.js "generic" build (or pdfjs-dist legacy build).
+   Recommended source: the official mozilla/pdf.js project or the npm package "pdfjs-dist".
+
+2) Copy the two minified files into this folder with EXACT names:
+   - pdf.min.js
+   - pdf.worker.min.js
+
+3) Run the site via a local server:
+   python -m http.server 8000
+   then open http://localhost:8000
+
+Notes:
+- If your PDF is scanned (image-only), text extraction may be empty. In that case, manually enter courses.
+- This tool is for planning; verify prerequisites, offerings, and transfer equivalencies with your department.
+
+License:
+PDF.js is licensed under Apache-2.0. Include its license if you redistribute the pdf.js files.
